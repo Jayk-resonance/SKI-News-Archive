@@ -1,0 +1,2 @@
+# INNO:Brief 파이프라인은 파이썬 표준 라이브러리만 사용합니다(추가 설치 불필요).
+# tools/*.py, daily_briefing/email_report.py 모두 stdlib(json, re, urllib, email, datetime) 기반.
