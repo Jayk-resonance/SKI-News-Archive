@@ -12,9 +12,15 @@ model: haiku
 1. `config/divisions.py`를 읽어 지시받은 부문의 `queries`를 얻는다.
    (부문이 `배터리·소재`면 `materials_queries`도 함께 돌린다.)
 2. 각 쿼리를 **Exa 고급검색**으로 검색한다 — 도구는 `mcp__…__web_search_advanced_exa` 형태로 보인다:
+   - **`category: "news"` ← 반드시 넣을 것.** 빠뜨리면 뉴스가 아닌 문서가 절반 넘게 섞인다.
+     2026-08-12에 이걸 빠뜨린 채로 돌린 결과, 정유 쿼리 15건 중 실제 기사는 3건뿐이었고
+     나머지는 인스타그램 릴스·부품 쇼핑몰 카탈로그·주식 시세 페이지·베트남어 논문이었다.
+     같은 쿼리에 `category:"news"`만 넣으니 실제 기사가 7건으로 늘었다.
    - `startPublishedDate` = 지금부터 약 48시간 전(ISO8601·UTC), `endPublishedDate` = 지금
    - `textMaxCharacters: 10` (전문 받지 않음), `enableHighlights: true`, `highlightsMaxCharacters: 250`
+   - `excludeDomains` = `config/sources.py`의 `BLOCKLIST_DOMAINS` (쇼핑몰·소셜·시세 페이지 하드 차단)
    - ⚠️ `category:"company"`는 날짜필터와 함께 쓰면 400 에러 → 쓰지 말 것
+     (`category:"news"`는 날짜필터와 함께 써도 정상이다 — 위 실측으로 확인했다)
    - 고급검색 도구가 안 보이면 `web_search_exa`로 대체(날짜필터 없이)
    - Exa가 모두 실패하면 Naver(PlayMCP `search_news`)로 대체하고 `link` 대신 `originallink`를 `url`로 쓴다
 3. 각 결과에서 다음만 뽑고 `division` = 이 부문을 붙인다. 부문 `daily_target`을 목표로 넉넉히 모으되 과하지 않게:

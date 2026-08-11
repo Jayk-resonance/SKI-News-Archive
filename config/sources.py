@@ -81,8 +81,26 @@ TIER_BY_DOMAIN: dict[str, int] = {
 }
 
 # 수집 제외 도메인(보도자료 재배포·광고성 예시). 필요 시 확장.
+#
+# 2026-08-12 확장: Exa 검색이 `category:"news"` 없이 돌아 뉴스가 아닌 문서가 대량 유입됐다.
+# 그날 실제 응답에 섞여 있던 유형을 그대로 옮겨 적는다 — 소셜, 부품 쇼핑몰, 주식 시세
+# 페이지, 논문 아카이브, 스크랩 애그리게이터. 이들은 발행일이 크롤 시각으로 찍히는 일이
+# 많아 날짜 필터도 그냥 통과한다.
 BLOCKLIST_DOMAINS: set[str] = {
+    # 보도자료 재배포
     "prnewswire.com", "businesswire.com",
+    # 소셜·영상
+    "instagram.com", "facebook.com", "tiktok.com", "youtube.com", "x.com", "twitter.com",
+    # 부품·산업재 쇼핑몰 카탈로그
+    "rsonline.cn", "rs-online.com", "shantui-xcmgparts.com",
+    # 주식 시세·실적 캘린더 (기사 아님)
+    "fxempire.com", "public.com", "stockanalysis.com", "marketbeat.com",
+    # 논문·자료 아카이브
+    "khotrithucso.com",
+    # 유료 산업보고서 마케팅 페이지
+    "ibisworld.com",
+    # 뉴스 스크랩 애그리게이터 (원문 중복 유발)
+    "headtopics.com",
 }
 
 DEFAULT_TIER = 3

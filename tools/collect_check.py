@@ -61,7 +61,12 @@ def check(items: list[dict]) -> dict:
                      "ratio": round(n / target, 2) if target else None})
     unknown = {k: v for k, v in got.items() if k not in DIVISIONS}
     empty = [r["division"] for r in rows if r["count"] == 0]
-    return {"rows": rows, "total": len(items), "empty": empty, "unknown": unknown}
+    total_target = sum(r["target"] for r in rows)
+    # 심각 판정: 전체가 목표의 40% 미만이거나, 통째로 빈 부문이 3개 이상.
+    # 이 상태로 진행하면 8/5~8/9처럼 3건짜리 브리핑이 조용히 커밋·발송된다.
+    severe = bool(total_target and len(items) < 0.4 * total_target) or len(empty) >= 3
+    return {"rows": rows, "total": len(items), "empty": empty, "unknown": unknown,
+            "totalTarget": total_target, "severe": severe}
 
 
 def format_report(res: dict, files: list[str]) -> str:
@@ -75,6 +80,10 @@ def format_report(res: dict, files: list[str]) -> str:
     if res["empty"]:
         out.append(f"[ALERT] 수집 0건 부문 {len(res['empty'])}개: {', '.join(res['empty'])}")
         out.append("        → 해당 부문 쿼리를 다시 시도하거나, Exa 응답 오류를 확인하세요.")
+    if res["severe"]:
+        out.append(f"[COLLECT-BLOCK] 총 {res['total']}건 / 목표 {res['totalTarget']}건 — 수집이 무너졌다.")
+        out.append('        → 이 상태로 다음 단계에 넘어가지 마라. Exa 호출에 `category:"news"`가'
+                   ' 들어갔는지 먼저 확인하고, 전 부문을 1회 재수집하라.')
     return "\n".join(out)
 
 
@@ -96,7 +105,8 @@ def main() -> int:
 
     res = check(items)
     print(format_report(res, files))
-    return 1 if res["empty"] else 0
+    # 2 = 반드시 전 부문 재수집, 1 = 일부 부문만 재시도, 0 = 정상
+    return 2 if res["severe"] else (1 if res["empty"] else 0)
 
 
 if __name__ == "__main__":

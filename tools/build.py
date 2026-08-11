@@ -711,6 +711,14 @@ def main() -> int:
         print(f"[WARN] 검증 경고 {len(warns)}건:", file=sys.stderr)
         for w in warns:
             print(f"  - {w}", file=sys.stderr)
+    # 수집량 급감은 경고로 끝내지 않는다. 2026-08-05~09에 나흘, 08-12에 또 한 번,
+    # 경고는 정확히 떴는데도 아무도 막지 않아 15%짜리 브리핑이 그대로 발송됐다.
+    # 종료 코드로 막아, 루틴이 커밋·발송 전에 반드시 멈추게 한다.
+    if health.get("low"):
+        print(f"[BLOCK] 수집량이 평소의 {int(health['ratio'] * 100)}% — "
+              "이 브리핑을 커밋·발송하지 마라. 재수집 후에도 같으면 실패로 보고하라.",
+              file=sys.stderr)
+        return 3
     return 0
 
 
