@@ -55,7 +55,10 @@ def check(items: list[dict]) -> dict:
         got[d] += 1
     rows = []
     for name, cfg in DIVISIONS.items():
-        target = cfg.get("daily_target", 0) + cfg.get("materials_target", 0)
+        # materials_target은 daily_target의 서브쿼터(예: 배터리 6건 중 분리막 1건)이지
+        # 별도 가산분이 아니다. 여기서 더하면(구 버전) 배터리 목표가 실제보다 부풀려져
+        # total_target·개별 ratio가 config/divisions.py의 daily_target 합과 어긋난다.
+        target = cfg.get("daily_target", 0)
         n = got.get(name, 0)
         rows.append({"division": name, "count": n, "target": target,
                      "ratio": round(n / target, 2) if target else None})

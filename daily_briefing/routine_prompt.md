@@ -6,7 +6,7 @@
 저장소의 파이썬 도구를 호출한다. 각 단계 실패 시 로그를 남기고 가능한 다음 단계로 진행하라.
 
 - 작업 브랜치(개발·푸시·배포): **`main`** (이 저장소는 SKI 브리핑 전용 — GitHub Pages도 `main`의 `/docs`에서 배포)
-- 하루 총 수집 목표: ~30건 (부문별 배분은 `config/divisions.py`의 `daily_target`, 배터리는 `materials_target`)
+- 하루 총 수집 목표: ~20건 (부문별 배분은 `config/divisions.py`의 `daily_target`, 배터리는 `materials_target`)
 
 **모델 티어링(비용 최적화):** 이 루틴의 **메인 모델은 Sonnet 권장**(오케스트레이션 + 분류 + 인사이트).
 토큰이 많이 드는 **수집(Step 1)은 `collector` 서브에이전트(Haiku)에 위임**하면 가장 좋다 — 정의는
@@ -121,7 +121,7 @@ tier1·2 매체가 함께 보도(교차검증)하면 그때 승급한다. 미검
   업계 파급도 뚜렷하지 않은 기사. (예: SK케미칼은 SK디스커버리 소속이라 이 브리핑 대상이 아님 →
   단독 소재면 DROP.) 단, 경쟁사 동향이 SK에 시사점을 주면 남긴다.
 
-부문별 상한(`daily_target` 합 ≈30)을 넘기지 말고, impact_score 낮은 중복성 기사부터 DROP.
+부문별 상한(`daily_target` 합 ≈20)을 넘기지 말고, impact_score 낮은 중복성 기사부터 DROP.
 
 항목 스키마:
 ```json

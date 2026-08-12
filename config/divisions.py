@@ -1,7 +1,7 @@
 """7개 사업부문 정의 — Exa 수집 쿼리·관찰 대상·수집 예산.
 
 daily 파이프라인이 부문별로 Exa에 던질 검색어와, 관련성 판단·개체 매칭에 쓰는
-SK 계열사/경쟁사 목록을 담는다. 하루 총 수집 목표는 ~30건(부문별 가중 배분).
+SK 계열사/경쟁사 목록을 담는다. 하루 총 수집 목표는 ~20건(부문별 가중 배분).
 비배터리 부문 키워드는 iM증권 정유/화학 Weekly(2Q26 Preview) 리포트를 반영해 보강.
 쿼리 언어 규칙: 계열사·국내 제도·SK 고유 브랜드는 한국어(계열사 특정 뉴스 안전망),
 일반 제품·시장·시황·정책은 영어(글로벌 원문 포괄). 교차언어 중복은 normalize의
@@ -20,7 +20,7 @@ DIVISIONS: dict[str, dict] = {
         # 소재 관찰 대상 — 분리막 사업 영위 회사
         "watch_materials": ["더블유씨피", "WCP", "아사히카세이", "Asahi Kasei",
                              "SEMCORP", "창신신소재", "도레이", "스미토모화학"],
-        # 계열사 = 한국어 앵커 / 시장·기술·정책 = 영어 글로벌 — 목표 ~8건
+        # 계열사 = 한국어 앵커 / 시장·기술·정책 = 영어 글로벌 — 목표 ~5건
         "queries": [
             "SK온 배터리 수주 실적 증설 투자 가동률",  # 계열사(한국어)
             "global EV sales demand outlook chasm Tesla BYD Hyundai Kia",
@@ -32,13 +32,13 @@ DIVISIONS: dict[str, dict] = {
             "EV battery cell maker supply deal OEM contract earnings LG Samsung SDI CATL",
             "EV battery fire recall safety defect quality issue NHTSA",  # 안전·리콜(SK온 직접 관련 다발)
         ],
-        # 분리막 — 계열사/경쟁사(한국어) + 시장(영어) — 목표 ~2건(materials_target)
+        # 분리막 — 계열사/경쟁사(한국어) + 시장(영어) — 목표 ~1건(materials_target)
         "materials_queries": [
             "SK아이이테크놀로지 SKIET 분리막 실적 공급 수주",  # 계열사(한국어)
             "battery separator market wet dry coating supply Asahi Kasei SEMCORP WCP",
         ],
-        "daily_target": 10,
-        "materials_target": 2,  # 10건 중 분리막·소재에 배분
+        "daily_target": 6,
+        "materials_target": 1,  # 6건 중 분리막·소재에 배분(daily_target의 서브쿼터 — 가산 아님)
     },
     "정유·트레이딩": {
         "sk_affiliates": ["SK에너지", "SK인천석유화학", "SK트레이딩인터내셔널", "SKTI"],
@@ -54,7 +54,7 @@ DIVISIONS: dict[str, dict] = {
             # 글로벌 통신·상품전문지 대상 — 유가·정제마진 원문
             "global oil refining market margin outlook Reuters Bloomberg Platts",
         ],
-        "daily_target": 5,
+        "daily_target": 3,
     },
     "석유화학": {
         "sk_affiliates": ["SK지오센트릭"],
@@ -72,7 +72,7 @@ DIVISIONS: dict[str, dict] = {
             "circular economy chemical recycling advanced pyrolysis polyolefin market",
             "petrochemical naphtha cracker spread overcapacity restructuring Reuters ICIS",
         ],
-        "daily_target": 4,
+        "daily_target": 3,
     },
     "윤활유·기유": {
         "sk_affiliates": ["SK엔무브"],
@@ -82,7 +82,7 @@ DIVISIONS: dict[str, dict] = {
             "base oil Group III GTL lubricant market price margin spread outlook",
             "base oil demand supply capacity lubricant ICIS Argus",
         ],
-        "daily_target": 3,
+        "daily_target": 2,
     },
     "E&P": {
         "sk_affiliates": ["SK어스온"],
@@ -105,7 +105,7 @@ DIVISIONS: dict[str, dict] = {
             "global LNG market price JKM TTF Henry Hub spot cargo supply demand",
             "LNG upstream gas field import project terminal Reuters Platts",
         ],
-        "daily_target": 3,
+        "daily_target": 2,
     },
     "전력·수소": {
         "sk_affiliates": ["SK E&S", "SK플러그하이버스"],
@@ -116,9 +116,9 @@ DIVISIONS: dict[str, dict] = {
             "hydrogen fuel cell clean power AI datacenter electricity demand grid",
             "renewable energy PPA RE100 solar wind power market storage",
         ],
-        "daily_target": 3,
+        "daily_target": 2,
     },
 }
 
 # 하루 총 수집 목표(부문 합) — 참고용
-TOTAL_DAILY_TARGET = sum(d["daily_target"] for d in DIVISIONS.values())  # = 30
+TOTAL_DAILY_TARGET = sum(d["daily_target"] for d in DIVISIONS.values())  # = 20
