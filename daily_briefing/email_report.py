@@ -33,12 +33,21 @@ CAT = {
     "E&P": ("#bd5140", "#fbeae7"), "LNG": ("#1f8f7c", "#e4f4f0"),
     "전력·수소": ("#2f9440", "#eaf6ec"),
 }
-IMP = {"high": ("#e23b34", "상"), "mid": ("#bf7414", "중"), "low": ("#8a8f99", "하")}
-
 # 인사이트 소제목·강조에 쓰는 단일 강조색. 부문별 색을 쓰면 날마다 톤이 바뀌어 산만하다.
 ACCENT = "#3b3fa8"
 RULE = "#e4e7ee"      # 표 구분선
 MUTED = "#8b919c"     # 보조 텍스트
+LINK = "#0563c1"      # 기사 제목 하이퍼링크 색(Word/Outlook 기본 링크색과 동일 — 링크임이 바로 보이게)
+
+# 표에서 부문 그룹 순서. build.py의 표준 7부문 순서와 동일하게 맞춘다.
+DIVISION_ORDER = ["배터리·소재", "정유·트레이딩", "석유화학", "윤활유·기유", "E&P", "LNG", "전력·수소"]
+
+
+def _division_rank(div: str) -> int:
+    try:
+        return DIVISION_ORDER.index(div)
+    except ValueError:
+        return len(DIVISION_ORDER)
 
 
 def esc(s) -> str:
@@ -116,9 +125,10 @@ def _score_color(score: int) -> str:
 
 
 def build_email(today: dict, recipients: list[str]) -> dict:
-    """지난 브리핑 양식: 수집 건수·기간 헤더 → TOP STORY 히어로 → 번호매김 영향력순 표."""
+    """지난 브리핑 양식: 수집 건수·기간 헤더 → TOP STORY 히어로 → 부문별·영향력순 표."""
     date = today.get("date", "")
-    cards = sorted(today.get("cards", []), key=lambda c: c.get("impact_score", 0), reverse=True)
+    cards = sorted(today.get("cards", []),
+                   key=lambda c: (_division_rank(c.get("division", "")), -c.get("impact_score", 0)))
     divc: dict[str, int] = {}
     for c in cards:
         divc[c["division"]] = divc.get(c["division"], 0) + 1
@@ -145,8 +155,8 @@ def build_email(today: dict, recipients: list[str]) -> dict:
         hero = f"""
       <div style="border-left:3px solid {ACCENT};padding:2px 0 2px 18px;margin:0 0 30px;">
         <div style="font-size:12.5px;font-weight:800;letter-spacing:.04em;color:{ACCENT};">AI Insight</div>
-        <div style="font-size:19px;font-weight:800;color:#15181d;margin:9px 0 7px;line-height:1.4;letter-spacing:-.3px;">
-          <a href="{esc(purl)}" style="color:#15181d;text-decoration:none;">{esc(pick.get('title_ko') or pick['title'])}</a></div>
+        <div style="font-size:19px;font-weight:800;margin:9px 0 7px;line-height:1.4;letter-spacing:-.3px;">
+          <a href="{esc(purl)}" style="color:{LINK};text-decoration:none;">{esc(pick.get('title_ko') or pick['title'])}</a></div>
         <div style="font-size:11.5px;color:{MUTED};">
           <span style="color:{cc[0]};font-weight:700;">{meta}</span>
           <span style="color:#c9ced8;">&nbsp;&nbsp;|&nbsp;&nbsp;</span>영향력 <span style="color:{_score_color(sc)};font-weight:800;">{sc}</span></div>
@@ -154,7 +164,7 @@ def build_email(today: dict, recipients: list[str]) -> dict:
         {f'<div style="margin-top:18px;padding-top:13px;border-top:1px solid {RULE};"><a href="{esc(SITE_URL)}?insight={esc(date)}" style="color:{ACCENT};font-size:13px;font-weight:700;text-decoration:none;">웹에서 원문 기사·전문 보기 &rarr;</a></div>' if SITE_URL else ''}
       </div>"""
 
-    # --- 전체 수집 기사(영향력순) 번호매김 표 ---
+    # --- 전체 수집 기사(부문별·영향력순) 번호매김 표 ---
     # 부문은 칩(배경색) 대신 제목 위 색 텍스트로 올린다 — Outlook에서 배경 칩이 깨진다.
     # 요약은 분류 단계에서 이미 만들어 둔 card['summary']를 그대로 쓴다(추가 LLM 호출 없음).
     rows = []
@@ -177,7 +187,7 @@ def build_email(today: dict, recipients: list[str]) -> dict:
           <td valign="top" style="padding:15px 0;border-bottom:1px solid {RULE};">
             <div style="font-size:11px;font-weight:800;color:{cc[0]};letter-spacing:.02em;margin-bottom:4px;">{esc(c['division'])}</div>
             <div style="font-size:14px;line-height:1.45;">
-              <a href="{esc(url)}" style="color:#15181d;text-decoration:none;font-weight:700;">{esc(c.get('title_ko') or c['title'])}</a></div>
+              <a href="{esc(url)}" style="color:{LINK};text-decoration:none;font-weight:700;">{esc(c.get('title_ko') or c['title'])}</a></div>
             {f'<div style="font-size:12.5px;line-height:1.7;color:#5b616b;margin-top:6px;">{esc(summary)}</div>' if summary else ''}
             <div style="color:{MUTED};font-size:11px;margin-top:6px;">{meta}</div></td>
           <td width="42" valign="top" align="center" style="padding:15px 0 15px 10px;border-bottom:1px solid {RULE};font-weight:800;font-size:15px;color:{_score_color(sc)};">{sc}</td>
@@ -195,15 +205,23 @@ def build_email(today: dict, recipients: list[str]) -> dict:
         f'뉴스가 적었을 수도 있지만, 수집 단계가 일부 실패했을 가능성이 있습니다.</div>'
     ) if h.get("low") else ""
 
-    html = f"""<!DOCTYPE html><html><body style="margin:0;background:#ffffff;">
-  <div style="max-width:680px;margin:0 auto;padding:26px 18px;font-family:'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;color:#2f3338;">
+    # Pretendard 웹폰트: Apple Mail·Gmail 웹/앱·신형(Chromium) Outlook은 @font-face를 그려낸다.
+    # 구 Outlook 데스크톱(Windows, Word 렌더링 엔진)은 웹폰트 자체를 지원하지 않아 이 선언을
+    # 무시하고 font-family 스택의 다음 순위(맑은 고딕)로 폴백한다 — Word 엔진의 알려진 한계이며
+    # 이 파일이 손댈 수 있는 범위 밖이다.
+    html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+@font-face{{font-family:'Pretendard';font-weight:400;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Regular.woff2') format('woff2');}}
+@font-face{{font-family:'Pretendard';font-weight:700;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-Bold.woff2') format('woff2');}}
+@font-face{{font-family:'Pretendard';font-weight:800;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/woff2/Pretendard-ExtraBold.woff2') format('woff2');}}
+</style></head><body style="margin:0;background:#ffffff;">
+  <div style="max-width:680px;margin:0 auto;padding:26px 18px;font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;color:#2f3338;">
     <div style="border-bottom:2px solid #15181d;padding-bottom:13px;margin-bottom:26px;">
       <div style="font-size:20px;font-weight:800;color:#15181d;letter-spacing:-.4px;">SK이노베이션 계열 사업부문별 동향</div>
       <div style="font-size:13px;color:#5b616b;margin-top:6px;">{esc(date)}{(' · 수집 기간 ' + esc(win)) if win else ''}</div>
       <div style="font-size:12px;color:{MUTED};margin-top:5px;">총 {len(cards)}건 수집{(' · ' + esc(divsum)) if divsum else ''}</div>
     </div>
     {alert}{hero}
-    <div style="font-size:15px;font-weight:800;color:#15181d;margin:0 0 2px;letter-spacing:-.2px;">전체 수집 기사 <span style="color:{MUTED};font-weight:500;font-size:13px;">{len(cards)}건 · 영향력순</span></div>
+    <div style="font-size:15px;font-weight:800;color:#15181d;margin:0 0 2px;letter-spacing:-.2px;">전체 수집 기사 <span style="color:{MUTED};font-weight:500;font-size:13px;">{len(cards)}건 · 부문별·영향력순</span></div>
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">{''.join(rows)}</table>
     {site_btn}
     <div style="text-align:center;font-size:11px;color:#a8aeb8;padding:18px 0;">본 브리핑은 AI가 자동 생성했습니다 · 원문 링크로 내용을 검증하세요</div>
