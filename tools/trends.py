@@ -194,9 +194,12 @@ def build_trends(articles: list[dict], latest: str) -> dict:
                 rising.append({"kw": k, "cur": cur, "prev": prev, "delta": cur - prev,
                                "curShare": round(cur_sh * 100, 1),
                                "prevShare": round(prev_sh * 100, 1)})
-        rising.sort(key=lambda x: (x["curShare"] - x["prevShare"], x["cur"]), reverse=True)
+        rising.sort(key=lambda x: (-(x["curShare"] - x["prevShare"]), -x["cur"], x["kw"]))
 
-    top_tags = sorted(tag_series.items(), key=lambda kv: sum(kv[1]), reverse=True)[:12]
+    # 동점일 때 라벨순으로 확정한다. tag_series는 집합 순회로 채워져 삽입 순서가 실행마다
+    # 달라지는데, 안정 정렬이 그 순서를 그대로 물려받아 같은 데이터에서 매번 다른 JSON이
+    # 나왔다(순환경제↔화학적 재활용이 자리를 바꿔 빌드마다 헛 diff가 생겼다).
+    top_tags = sorted(tag_series.items(), key=lambda kv: (-sum(kv[1]), kv[0]))[:12]
     top_topic = sorted(by_topic.items(), key=lambda kv: sum(kv[1]), reverse=True)[:10]
 
     companies = []
