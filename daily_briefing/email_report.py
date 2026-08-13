@@ -194,15 +194,24 @@ def build_email(today: dict, recipients: list[str]) -> dict:
         <tr>
           <td width="26" valign="top" style="padding:15px 8px 15px 0;border-bottom:1px solid {RULE};text-align:center;color:#b9bec8;font-size:12px;font-weight:700;">{i}</td>
           <td valign="top" style="padding:15px 0;border-bottom:1px solid {RULE};">
-            <span style="display:inline-block;font-size:11px;font-weight:800;color:{cc[0]};background:{cc[1]};letter-spacing:.02em;border-radius:4px;padding:2px 7px;margin-bottom:4px;">{esc(c['division'])}</span>
-            <div style="font-size:14px;line-height:1.45;margin-top:4px;">
+            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>
+              <td style="background:{cc[1]};color:{cc[0]};font-size:11px;font-weight:800;letter-spacing:.02em;padding:2px 7px;">{esc(c['division'])}</td>
+            </tr></table>
+            <div style="font-size:14px;line-height:1.45;margin-top:6px;">
               <a href="{esc(url)}" style="color:{LINK};text-decoration:none;font-weight:700;">{esc(c.get('title_ko') or c['title'])}</a></div>
             {f'<div style="font-size:12.5px;line-height:1.7;color:#5b616b;margin-top:6px;">{esc(summary)}</div>' if summary else ''}
             <div style="color:{MUTED};font-size:11px;margin-top:6px;">{meta}</div></td>
           <td width="42" valign="top" align="center" style="padding:15px 0 15px 10px;border-bottom:1px solid {RULE};font-weight:800;font-size:15px;color:{_score_color(sc)};">{sc}</td>
         </tr>""")
 
-    site_btn = f'<div style="text-align:center;margin:24px 0 8px;"><a href="{esc(SITE_URL)}" style="display:inline-block;background:#1c1c1c;color:#fff;text-decoration:none;font-size:13px;font-weight:600;border-radius:8px;padding:10px 20px;">전체 아카이브 보기 →</a></div>' if SITE_URL else ""
+    # 표 셀 배경 방식(이른바 "bulletproof button") — <a>/<span>의 inline-block+padding+background
+    # 조합과 같은 이유로 Outlook에서 안 그려질 수 있어 표로 감싼다.
+    site_btn = (
+        f'<table cellpadding="0" cellspacing="0" border="0" style="margin:24px auto 8px;border-collapse:collapse;"><tr>'
+        f'<td style="background:#1c1c1c;padding:10px 20px;">'
+        f'<a href="{esc(SITE_URL)}" style="color:#fff;text-decoration:none;font-size:13px;font-weight:600;">전체 아카이브 보기 →</a>'
+        f'</td></tr></table>'
+    ) if SITE_URL else ""
 
     # 수집량 급감 경보 — 조용히 3건짜리 브리핑이 나가던 문제를 메일에서 바로 알아채기 위함.
     h = today.get("health") or {}
