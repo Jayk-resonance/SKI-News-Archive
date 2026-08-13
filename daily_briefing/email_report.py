@@ -165,8 +165,12 @@ def build_email(today: dict, recipients: list[str]) -> dict:
       </div>"""
 
     # --- 전체 수집 기사(부문별·영향력순) 번호매김 표 ---
-    # 부문은 칩(배경색) 대신 제목 위 색 텍스트로 올린다 — Outlook에서 배경 칩이 깨진다.
+    # 부문 배지는 배경색 칩(단일 줄 inline-block)으로 표시한다. AI Insight 히어로의 음영을
+    # 없앤 것과는 다른 문제다 — 히어로가 깨졌던 건 배경이 여러 <p> 문단에 걸쳐 있어 Outlook이
+    # 문단 사이를 흰색으로 끊어 그렸기 때문이고, 이 배지는 줄바꿈 없는 한 줄짜리 <span>이라
+    # 같은 문제가 생기지 않는다.
     # 요약은 분류 단계에서 이미 만들어 둔 card['summary']를 그대로 쓴다(추가 LLM 호출 없음).
+    SUMMARY_LIMIT = 280  # 현재 아카이브 최장 요약(273자)을 여유 있게 덮는 값 — 정상 요약은 안 잘림
     rows = []
     for i, c in enumerate(cards, 1):
         cc = CAT.get(c["division"], ("#1c1c1c", "#f4f6f8"))
@@ -179,14 +183,19 @@ def build_email(today: dict, recipients: list[str]) -> dict:
             dstr = c.get("date", "")
         meta = " · ".join(x for x in [esc(c.get("leadPublisher", "")), esc(dstr)] if x)
         summary = (c.get("summary") or "").strip()
-        if len(summary) > 170:
-            summary = summary[:169].rstrip() + "…"
+        if len(summary) > SUMMARY_LIMIT:
+            # 글자 수로 뚝 자르면 단어 중간이 잘려 어색하다 — 마지막 공백에서 끊는다.
+            cut = summary[:SUMMARY_LIMIT]
+            sp = cut.rfind(" ")
+            if sp > SUMMARY_LIMIT * 0.6:
+                cut = cut[:sp]
+            summary = cut.rstrip() + "…"
         rows.append(f"""
         <tr>
           <td width="26" valign="top" style="padding:15px 8px 15px 0;border-bottom:1px solid {RULE};text-align:center;color:#b9bec8;font-size:12px;font-weight:700;">{i}</td>
           <td valign="top" style="padding:15px 0;border-bottom:1px solid {RULE};">
-            <div style="font-size:11px;font-weight:800;color:{cc[0]};letter-spacing:.02em;margin-bottom:4px;">{esc(c['division'])}</div>
-            <div style="font-size:14px;line-height:1.45;">
+            <span style="display:inline-block;font-size:11px;font-weight:800;color:{cc[0]};background:{cc[1]};letter-spacing:.02em;border-radius:4px;padding:2px 7px;margin-bottom:4px;">{esc(c['division'])}</span>
+            <div style="font-size:14px;line-height:1.45;margin-top:4px;">
               <a href="{esc(url)}" style="color:{LINK};text-decoration:none;font-weight:700;">{esc(c.get('title_ko') or c['title'])}</a></div>
             {f'<div style="font-size:12.5px;line-height:1.7;color:#5b616b;margin-top:6px;">{esc(summary)}</div>' if summary else ''}
             <div style="color:{MUTED};font-size:11px;margin-top:6px;">{meta}</div></td>
